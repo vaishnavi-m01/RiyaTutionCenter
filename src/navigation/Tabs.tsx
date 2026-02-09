@@ -62,7 +62,7 @@ const TabNavigator = () => {
 
                     return (
                         <View style={{ alignItems: "center" }}>
-                            {/* 🔵 TOP LINE — Placeholder always (fix icon movement) */}
+                          
                             <View
                                 style={{
                                     height: 3,
