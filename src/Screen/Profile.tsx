@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
-import { Image, Text, TouchableOpacity, View, TextInput, Modal, TouchableWithoutFeedback } from "react-native";
+import React, { useRef, useState, useEffect } from "react";
+import { Image, Text, TouchableOpacity, View, TextInput, Modal, TouchableWithoutFeedback, ActivityIndicator, ToastAndroid } from "react-native";
 import RBSheet from "react-native-raw-bottom-sheet";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
      CameraOptions,
      ImageLibraryOptions,
@@ -10,6 +11,8 @@ import {
 } from "react-native-image-picker";
 import AppHeader from "../utils/AppBar";
 import { useNavigation } from "@react-navigation/core";
+import apiClient from "../api/apiBaseUrl";
+import { uploadToCloudinary } from "../utils/cloudinary";
 
 interface RBSheetRef {
      open: () => void;
@@ -23,12 +26,42 @@ const Profile = () => {
      const [email, setEmail] = useState("");
      const [phone, setPhone] = useState("");
      const [loading, setLoading] = useState(false);
+     const [fetchLoading, setFetchLoading] = useState(true);
+
+     useEffect(() => {
+          fetchProfile();
+     }, []);
+
+     const fetchProfile = async () => {
+          try {
+               setFetchLoading(true);
+               const id = await AsyncStorage.getItem("adminId");
+               if (id) {
+                    const response = await apiClient.get(`/admin/getbyid/${id}`);
+                    const data = response.data;
+                    if (data) {
+                         setName(data.name || "");
+                         setEmail(data.email || "");
+                         setPhone(data.phone || "");
+                         setProfileImage(data.imageUrl || null);
+                    }
+               }
+          } catch (error) {
+               console.error("Error fetching profile:", error);
+          } finally {
+               setFetchLoading(false);
+          }
+     };
 
 
 
      const [passwordModal, setPasswordModal] = useState(false);
      const [oldPass, setOldPass] = useState("");
      const [newPass, setNewPass] = useState("");
+     const [confirmPass, setConfirmPass] = useState("");
+     const [passLoading, setPassLoading] = useState(false);
+     const [showNewPass, setShowNewPass] = useState(false);
+     const [showConfirmPass, setShowConfirmPass] = useState(false);
 
 
      const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -68,14 +101,95 @@ const Profile = () => {
      };
 
 
-     const handleSubmitPassword = () => {
-          console.log("Old:", oldPass);
-          console.log("New:", newPass);
+     const handleSubmitPassword = async () => {
+          if (!newPass || !confirmPass) {
+               ToastAndroid.show("Please fill all fields", ToastAndroid.SHORT);
+               return;
+          }
 
-          setPasswordModal(false);
-          setOldPass("");
-          setNewPass("");
+          if (newPass !== confirmPass) {
+               ToastAndroid.show("New password and confirm password do not match", ToastAndroid.SHORT);
+               return;
+          }
+
+          try {
+               setPassLoading(true);
+               const id = await AsyncStorage.getItem("adminId");
+               const payload = {
+                    id: parseInt(id || "0"),
+                    newPassword: newPass,
+                    confirmPassword: confirmPass
+               };
+
+               const res = await apiClient.post('/admin/change-password', payload);
+
+               if (res.status === 200) {
+                    ToastAndroid.show("Password changed successfully", ToastAndroid.SHORT);
+                    setPasswordModal(false);
+                    setNewPass("");
+                    setConfirmPass("");
+               }
+          } catch (error: any) {
+               console.error("Change password error:", error);
+               const msg = error.response?.data?.message || "Failed to change password";
+               ToastAndroid.show(msg, ToastAndroid.SHORT);
+          } finally {
+               setPassLoading(false);
+          }
      };
+
+     const handleSave = async () => {
+          try {
+               setLoading(true);
+               const id = await AsyncStorage.getItem("adminId");
+               if (!id) return;
+
+               let cloudinaryUrl = profileImage;
+
+               // 1. Upload to Cloudinary if image is local
+               if (profileImage && !profileImage.startsWith('http')) {
+                    console.log('Initiating Cloudinary upload for Admin profile...');
+                    const uploadedUrl = await uploadToCloudinary(profileImage);
+                    if (uploadedUrl) {
+                         cloudinaryUrl = uploadedUrl;
+                    } else {
+                         ToastAndroid.show("Failed to upload image. Keeping existing image.", ToastAndroid.SHORT);
+                         cloudinaryUrl = null;
+                    }
+               }
+
+               const profileData = {
+                    name,
+                    email,
+                    phone,
+                    imageUrl: cloudinaryUrl
+               };
+
+               console.log("--- Update Profile Payload (JSON) ---", profileData);
+
+               const response = await apiClient.put(`/admin/update/${id}`, profileData, {
+                    headers: { 'Content-Type': 'application/json' }
+               });
+
+               if (response.status === 200 || response.status === 201) {
+                    ToastAndroid.show("Profile updated successfully", ToastAndroid.SHORT);
+                    navigation.goBack();
+               }
+          } catch (error) {
+               console.error("Error updating profile:", error);
+               ToastAndroid.show("Failed to update profile", ToastAndroid.SHORT);
+          } finally {
+               setLoading(false);
+          }
+     };
+
+     if (fetchLoading) {
+          return (
+               <View className="flex-1 bg-white justify-center items-center">
+                    <ActivityIndicator size="large" color="#007BFF" />
+               </View>
+          );
+     }
 
      return (
           <View className="flex-1 bg-white">
@@ -110,7 +224,7 @@ const Profile = () => {
                          />
 
                          {/* Camera Icon */}
-                      
+
                          <TouchableOpacity
                               onPress={openFilterSheet}
                               style={{
@@ -177,6 +291,7 @@ const Profile = () => {
                     </View>
 
                     <TouchableOpacity
+                         onPress={handleSave}
                          style={{
                               width: "100%",
                               backgroundColor: loading ? "#9CA3AF" : "#007BFF",
@@ -186,8 +301,9 @@ const Profile = () => {
                               justifyContent: "center",
                               marginTop: 28,
                          }}
+                         disabled={loading}
                     >
-                         <Text style={{ color: "#fff", fontWeight: "600" }}>Save</Text>
+                         {loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "600" }}>Save</Text>}
                     </TouchableOpacity>
 
 
@@ -225,34 +341,56 @@ const Profile = () => {
                                         Change Password
                                    </Text>
 
-                                   {/* Old Password */}
-                                   <Text className="font-medium text-[#111827] mb-2">Old Password</Text>
-                                   <TextInput
-                                        value={oldPass}
-                                        onChangeText={setOldPass}
-                                        placeholder="Enter old password"
-                                        secureTextEntry
-                                        className="border border-gray-300 rounded-xl p-3 mb-4"
-                                   />
 
                                    {/* New Password */}
                                    <Text className="font-medium text-[#111827] mb-2">New Password</Text>
-                                   <TextInput
-                                        value={newPass}
-                                        onChangeText={setNewPass}
-                                        placeholder="Enter new password"
-                                        secureTextEntry
-                                        className="border border-gray-300 rounded-xl p-3 mb-6"
-                                   />
+                                   <View className="relative">
+                                        <TextInput
+                                             value={newPass}
+                                             onChangeText={setNewPass}
+                                             placeholder="Enter new password"
+                                             secureTextEntry={!showNewPass}
+                                             className="border border-gray-300 rounded-xl p-3 mb-4 pr-10"
+                                        />
+                                        <TouchableOpacity
+                                             onPress={() => setShowNewPass(!showNewPass)}
+                                             className="absolute right-3 top-3"
+                                        >
+                                             <Ionicons name={showNewPass ? "eye-off" : "eye"} size={20} color="#6B7280" />
+                                        </TouchableOpacity>
+                                   </View>
+
+                                   {/* Confirm Password */}
+                                   <Text className="font-medium text-[#111827] mb-2">Confirm Password</Text>
+                                   <View className="relative">
+                                        <TextInput
+                                             value={confirmPass}
+                                             onChangeText={setConfirmPass}
+                                             placeholder="Confirm new password"
+                                             secureTextEntry={!showConfirmPass}
+                                             className="border border-gray-300 rounded-xl p-3 mb-6 pr-10"
+                                        />
+                                        <TouchableOpacity
+                                             onPress={() => setShowConfirmPass(!showConfirmPass)}
+                                             className="absolute right-3 top-3"
+                                        >
+                                             <Ionicons name={showConfirmPass ? "eye-off" : "eye"} size={20} color="#6B7280" />
+                                        </TouchableOpacity>
+                                   </View>
 
                                    {/* Submit */}
                                    <TouchableOpacity
                                         onPress={handleSubmitPassword}
-                                        className="bg-[#007BFF] p-3 rounded-xl"
+                                        disabled={passLoading}
+                                        className={`p-3 rounded-xl ${passLoading ? 'bg-gray-400' : 'bg-[#007BFF]'}`}
                                    >
-                                        <Text className=" text-white text-center font-semibold">
-                                             Submit
-                                        </Text>
+                                        {passLoading ? (
+                                             <ActivityIndicator color="#fff" />
+                                        ) : (
+                                             <Text className=" text-white text-center font-semibold">
+                                                  Submit
+                                             </Text>
+                                        )}
                                    </TouchableOpacity>
 
                               </View>

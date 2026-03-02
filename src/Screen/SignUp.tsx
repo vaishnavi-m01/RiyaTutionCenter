@@ -15,6 +15,7 @@ import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Platform } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import apiClient from "../api/apiBaseUrl";
 
 
 
@@ -58,7 +59,7 @@ const SignUp = () => {
 
     const validatePassword = (value: string) => {
         if (!value.trim()) return "Password is required";
-        if (value.length < 8) return "Password must be at least 8 characters";
+        if (value.length < 4) return "Password must be at least 4 characters";
 
         return "";
     };
@@ -135,57 +136,58 @@ const SignUp = () => {
     //     }
     // };
 
-    // const handleRegister = async () => {
-    //     if (loading) return;
+    const handleRegister = async () => {
+        if (loading) return;
 
-    //     console.log("handleRegister clicked");
+        const nameError = validateName(name);
+        const emailError = validateEmail(email);
+        const phoneError = validatePhone(phone);
+        const passwordError = validatePassword(password);
 
-    //     const nameError = validateName(name);
-    //     const emailError = validateEmail(email);
-    //     const phoneError = validatePhone(phone);
-    //     const passwordError = validatePassword(password);
+        if (nameError || emailError || phoneError || passwordError) {
+            setErrors({
+                name: nameError,
+                email: emailError,
+                phone: phoneError,
+                password: passwordError,
+            });
+            return;
+        }
 
-    //     if (nameError || emailError || phoneError || passwordError) {
-    //         setErrors({
-    //             name: nameError,
-    //             email: emailError,
-    //             phone: phoneError,
-    //             password: passwordError,
-    //         });
-    //         return;
-    //     }
+        try {
+            setLoading(true);
 
-    //     try {
-    //         setLoading(true);
+            const registrationData = {
+                name,
+                email,
+                phone,
+                password,
+                imageUrl: null // No image during registration initially
+            };
 
-    //         const payload = { name, email, phone, password, roleId: 2, activeStatus: true };
-    //         console.log("SignUppayload", payload);
+            console.log("Registration Attempt - URL: /admin/register (Using JSON)");
 
-    //         const res = await apiClient.post("v1/user", payload);
-    //         console.log("response", res);
+            const res = await apiClient.post("/admin/register", registrationData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            console.log("Registration Response Status:", res.status);
 
-    //         if (res.status === 200 || res.status === 201) {
-    //             const user = res.data;
-    //             await AsyncStorage.setItem("user", JSON.stringify(user));
-
-    //             Alert.alert("Registered Successfully!");
-
-
-    //             if (navigation.canGoBack()) {
-    //                 navigation.pop(2);
-    //             } else {
-    //                 navigation.navigate("Main", { screen: "Home" });
-    //             }
-    //         } else {
-    //             Alert.alert("Registration failed");
-    //         }
-    //     } catch (error) {
-    //         console.error(error);
-    //         Alert.alert("Error during registration");
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
+            if (res.status === 200 || res.status === 201) {
+                Alert.alert("Registration Success", "Account created successfully!");
+                navigation.navigate("SignIn");
+            } else {
+                Alert.alert("Registration Failed", "Something went wrong.");
+            }
+        } catch (error: any) {
+            console.error("Registration Error:", error?.response?.data || error.message);
+            const errorMessage = error?.response?.data || "Error during registration";
+            Alert.alert("Error", typeof errorMessage === 'string' ? errorMessage : "Error during registration");
+        } finally {
+            setLoading(false);
+        }
+    };
 
 
 
@@ -268,7 +270,7 @@ const SignUp = () => {
 
                     <TouchableOpacity
                         style={[styles.button, loading && { opacity: 0.6 }]}
-                        onPress={() => navigation.navigate("Tabs")}
+                        onPress={handleRegister}
                         disabled={loading}
                     >
                         <Text style={styles.buttonText}>

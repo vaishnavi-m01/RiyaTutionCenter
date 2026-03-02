@@ -22,9 +22,9 @@ interface AppHeaderProps {
     onLeftPress?: () => void;
     onRightPress?: () => void;
     showSearch?: boolean;
-    searchPlaceholder?: string;
     searchValue?: string;
     onSearchChange?: (text: string) => void;
+    searchPlaceholder?: string;
     onSearchFocus?: () => void;
     onSearchBlur?: () => void;
     onSearchSubmit?: () => void;
@@ -181,7 +181,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                 <View className="flex-row items-center bg-white rounded-full px-4 py-2 mb-3">
                     <Ionicons name="search" size={18} color="#666" />
                     <TextInput
-                        placeholder={searchPlaceholder}
+                        className="flex-1 h-10 ml-2 text-gray-700 text-sm"
+                        placeholder={searchPlaceholder || "Search..."}
                         value={searchValue}
                         onChangeText={onSearchChange}
                         onFocus={onSearchFocus}
@@ -189,7 +190,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                         onSubmitEditing={onSearchSubmit}
                         placeholderTextColor="#999"
                         returnKeyType="search"
-                        className="flex-1 ml-2 text-gray-700 text-sm"
                     />
                 </View>
             )}

@@ -11,12 +11,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Feather from "react-native-vector-icons/Feather";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import apiClient from "../api/apiBaseUrl";
 
 
 
@@ -60,53 +62,44 @@ const SignIn = () => {
   //     }
   //   };
 
-  //   const handleSignIn = async () => {
-  //     const emailError = validateEmail(emailId);
-  //     const passwordError = validatePassword(password);
+  const handleSignIn = async () => {
+    const emailError = validateEmail(emailId);
+    const passwordError = validatePassword(password);
 
-  //     if (emailError || passwordError) {
-  //       setErrors({ email: emailError, password: passwordError });
-  //       return;
-  //     }
+    if (emailError || passwordError) {
+      setErrors({ email: emailError, password: passwordError });
+      return;
+    }
 
-  //     setErrors({});
-  //     setLoading(true);
-  //     try {
-  //       const response = await apiClient.post("v1/login/user", {
-  //         emailId,
-  //         password,
-  //       });
-  //       const data = response.data;
+    setErrors({});
+    setLoading(true);
+    try {
+      const response = await apiClient.post("/auth/login", {
+        email: emailId,
+        password,
+      });
+      const data = response.data;
 
-  //       await AsyncStorage.setItem("userToken", data.token);
-  //       const userId = data.userId;
+      // According to user request: "response local la store this id vachi profile page la getby id api call it"
+      // Assuming 'data.id' is the ID returned by the server
+      if (data && data.id) {
+        await AsyncStorage.setItem("adminId", data.id.toString());
+        ToastAndroid.show("Login Successful", ToastAndroid.SHORT);
+        navigation.navigate("Tabs");
+      } else {
+        Alert.alert("Login Failed", "Invalid credentials. Please try again.");
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data || "Login failed. Please try again.";
 
-  //       const profileRes = await apiClient.get(`/v1/user/${userId}`, {
-  //         headers: { Authorization: `Bearer ${data.token}` },
-  //       });
-  //       await AsyncStorage.setItem("user", JSON.stringify(profileRes.data));
-
-  //       await syncGuestWishlistToServer(userId, data.token);
-  //       await syncGuestCartToServer(userId, data.token);
-
-  //       ToastAndroid.show("Login Success", ToastAndroid.SHORT);
-
-  //       if (navigation.canGoBack()) {
-  //         navigation.pop(2);
-  //       } else {
-  //         navigation.navigate("Main", { screen: "Home" });
-  //       }
-  //     } catch (error: any) {
-  //       const errorMessage =
-  //         error?.response?.data || "Login failed. Please try again.";
-
-  //       console.log("Login error", errorMessage);
-  //       ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
-  //     }
-  //     finally {
-  //       setLoading(false);
-  //     }
-  //   };
+      console.log("Login error", errorMessage);
+      Alert.alert("Login Error", typeof errorMessage === 'string' ? errorMessage : "Invalid credentials. Please try again.");
+    }
+    finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -187,7 +180,7 @@ const SignIn = () => {
 
             <TouchableOpacity
               style={styles.button}
-              onPress={() => navigation.navigate("Tabs")}
+              onPress={handleSignIn}
 
               disabled={loading}
             >

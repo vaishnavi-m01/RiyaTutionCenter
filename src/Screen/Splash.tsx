@@ -1,19 +1,27 @@
 import { useEffect } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native"
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 const Splash = () => {
 
     const navigation = useNavigation<any>();
 
-    // useEffect(() => {
-    //     const timer = setTimeout(() => {
-    //         navigation.replace("Tabs");
-    //     }, 2500);
+    useEffect(() => {
+        const checkLoginStatus = async () => {
+            try {
+                const adminId = await AsyncStorage.getItem("adminId");
+                if (adminId) {
+                    navigation.replace("Tabs");
+                }
+            } catch (error) {
+                console.error("Error checking login status:", error);
+            }
+        };
 
-    //     return () => clearTimeout(timer);
-    // }, [navigation]);
+        checkLoginStatus();
+    }, [navigation]);
 
     const handleGetStarted = () => {
         navigation.replace("SignIn");

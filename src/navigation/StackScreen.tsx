@@ -14,6 +14,10 @@ import ClassFees from "../Screen/ClassFees";
 import AddClassFees from "../Screen/AddClassFees";
 import SignIn from "../Screen/SignIn";
 import SignUp from "../Screen/SignUp";
+import Standard from "../Screen/Standard";
+import Medium from "../Screen/Medium";
+import BirthdayTemplateSettings from "../Screen/BirthdayTemplateSettings";
+import FeesHistory from "../Screen/FeesHistory";
 
 
 const Stack = createNativeStackNavigator<RootStackParmaList>();
@@ -42,9 +46,13 @@ export default function StackScreen() {
         <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
         <Stack.Screen name="Settings" component={Settings} />
         <Stack.Screen name="ClassFees" component={ClassFees} options={{ headerShown: false }} />
+        <Stack.Screen name="Standard" component={Standard} options={{ headerShown: false }} />
+        <Stack.Screen name="Medium" component={Medium} options={{ headerShown: false }} />
         <Stack.Screen name="AddClassFees" component={AddClassFees} options={{ headerShown: false }} />
         <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
         <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
+        <Stack.Screen name="BirthdayTemplateSettings" component={BirthdayTemplateSettings} options={{ headerShown: false }} />
+        <Stack.Screen name="FeesHistory" component={FeesHistory} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, Image, Modal } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, Image, Modal, Keyboard, ToastAndroid } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AppHeader from '../utils/AppBar';
 import { Picker } from "@react-native-picker/picker";
@@ -8,6 +8,12 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CameraOptions, ImageLibraryOptions, launchCamera, launchImageLibrary, MediaType } from 'react-native-image-picker';
 import RBSheet from 'react-native-raw-bottom-sheet';
+import apiClient from '../api/apiBaseUrl';
+import config from '../config/enviroment';
+import { useRoute } from '@react-navigation/native';
+import { Student } from '../type/type';
+import { formatToBackendDate, formatToUIDate } from '../utils/dateFormatter';
+import { uploadToCloudinary } from '../utils/cloudinary';
 
 
 
@@ -16,26 +22,42 @@ interface RBSheetRef {
   close: () => void;
 }
 
+
+type Standard = {
+  id: number;
+  name: string;
+};
+
+type Medium = {
+  id: number;
+  name: string;
+}
+
 const CreateStudent = () => {
   const insets = useSafeAreaInsets();
-
+  const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const [name, setName] = useState('');
-  const [gender, setGender] = useState('Male');
-  const [phone, setPhone] = useState('');
-  const [standard, setStandard] = useState("");
-  const [school, setSchool] = useState("");
-  const [medium, setMedium] = useState("");
-  const [age, setAge] = useState("");
-  const [place, setPlace] = useState("");
-  const [address, setAddress] = useState("");
-  const [status, setStatus] = useState('Active');
-  const [joingingDate, setJoingingDate] = useState("");
-  const [profileImage, setProfileImage] = useState<string | null>(null);
 
+  const editStudent: Student | undefined = route.params?.student;
+  const headerTitle = route.params?.headerTitle || 'New Student';
 
+  const [id, setId] = useState(editStudent?.id || 0);
+  const [name, setName] = useState(editStudent?.name || '');
+  const [gender, setGender] = useState(editStudent?.gender || 'Male');
+  const [phone, setPhone] = useState(editStudent?.phone || '');
+  const [standardId, setStandardId] = useState(editStudent?.standardId || 0);
+  const [standards, setStandards] = useState<Standard[]>([]);
+  const [school, setSchool] = useState(editStudent?.school || "");
+  const [mediumId, setMediumId] = useState(editStudent?.mediumId || 0);
+  const [mediums, setMediums] = useState<Medium[]>([]);
+  const [age, setAge] = useState(editStudent?.age?.toString() || "");
+  const [place, setPlace] = useState(""); // Not in Student interface but in UI
+  const [address, setAddress] = useState(editStudent?.address || "");
+  const [status, setStatus] = useState(editStudent?.activeStatus !== false ? 'Active' : 'Inactive');
+  const [joingingDate, setJoingingDate] = useState(editStudent?.joiningDate || new Date().toISOString().slice(0, 10));
+  const [profileImage, setProfileImage] = useState<string | null>(editStudent?.imageUrl || null);
 
-  const [dob, setDob] = useState("");
+  const [dob, setDob] = useState(formatToUIDate(editStudent?.dateOfBirth) || "");
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -43,50 +65,151 @@ const CreateStudent = () => {
   const [showJoinPicker, setShowJoinPicker] = useState(false);
 
   const [openModal, setOpenModal] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const refRBSheet = useRef<RBSheetRef>(null);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', () => setIsKeyboardVisible(true));
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => setIsKeyboardVisible(false));
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const openFilterSheet = () => refRBSheet.current?.open();
   const closeSheet = () => refRBSheet.current?.close();
 
-  const standards = [
-    "LKG",
-    "UKG",
-    ...Array.from({ length: 12 }, (_, i) => {
-      const num = i + 1;
-      const suffix =
-        num === 1 ? "st" :
-          num === 2 ? "nd" :
-            num === 3 ? "rd" : "th";
-      return `${num}${suffix}`;
-    }),
-  ];
 
+  //standard fetch
+
+  useEffect(() => {
+    const fetchStandards = async () => {
+      try {
+        const response = await apiClient.get('/standard/all');
+        if (Array.isArray(response.data)) {
+          setStandards(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch standards:', error);
+      }
+    };
+    fetchStandards();
+  }, []);
+
+
+  //medium fetch
+
+  useEffect(() => {
+    const fetchMediums = async () => {
+      try {
+        const response = await apiClient.get('medium/all');
+        if (Array.isArray(response.data)) {
+          setMediums(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch mediums:', error);
+      }
+    };
+    fetchMediums();
+  }, []);
 
   const onChange = (event: any, selectedDate: any) => {
     setShowPicker(false);
     if (selectedDate) {
-      const formatted = selectedDate.toISOString().slice(0, 10); // YYYY-MM-DD
+      const formatted = formatToUIDate(selectedDate.toISOString().slice(0, 10)); // DD-MM-YYYY
       setDob(formatted);
     }
   };
 
 
-  const onChangeJoingingDate = (event: any, selectedDate: any) => {
-    setShowPicker(false);
-    if (selectedDate) {
-      const formatted = selectedDate.toISOString().slice(0, 10); // YYYY-MM-DD
-      setJoingingDate(formatted);
-    }
-  };
 
 
 
-  const handleSave = () => {
-    if (!name.trim() || !phone.trim()) {
-      Alert.alert('Validation', 'Please enter name and phone');
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      Alert.alert('Validation', 'Please enter student name');
       return;
     }
-    navigation.goBack();
+    if (phone.length !== 10) {
+      Alert.alert('Validation', 'Phone number must be exactly 10 digits');
+      return;
+    }
+    if (!standardId) {
+      Alert.alert('Validation', 'Please select a standard');
+      return;
+    }
+    if (!mediumId) {
+      Alert.alert('Validation', 'Please select a medium');
+      return;
+    }
+    if (!dob) {
+      Alert.alert('Validation', 'Please select date of birth');
+      return;
+    }
+    if (!joingingDate) {
+      Alert.alert('Validation', 'Please select joining date');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      let cloudinaryUrl = profileImage;
+
+      // 1. Upload to Cloudinary if image is local
+      if (profileImage && !profileImage.startsWith('http')) {
+        console.log('Initiating Cloudinary upload...');
+        const uploadedUrl = await uploadToCloudinary(profileImage);
+        if (uploadedUrl) {
+          cloudinaryUrl = uploadedUrl;
+        } else {
+          Alert.alert('Upload Error', 'Failed to upload image to cloud. Proceeding without image.');
+          cloudinaryUrl = null;
+        }
+      }
+
+      // 2. Prepare payload
+      const studentData: any = {
+        name: name.trim(),
+        phone: phone.trim(),
+        school: school.trim(),
+        standardId: standardId,
+        mediumId: mediumId,
+        age: parseInt(age) || 0,
+        gender: gender,
+        dateOfBirth: formatToBackendDate(dob),
+        joiningDate: formatToBackendDate(joingingDate),
+        address: address.trim(),
+        activeStatus: status === 'Active',
+        imageUrl: cloudinaryUrl
+      };
+
+      if (id !== 0) {
+        studentData.id = id;
+      }
+
+      console.log('Sending student data to backend:', studentData);
+
+      // 3. Send to backend
+      const response = id === 0
+        ? await apiClient.post('students/create', studentData, { headers: { 'Content-Type': 'application/json' } })
+        : await apiClient.put(`students/update/${id}`, studentData, { headers: { 'Content-Type': 'application/json' } });
+
+      if (response.status === 200 || response.status === 201) {
+        ToastAndroid.show(`Student ${id === 0 ? 'created' : 'updated'} successfully`, ToastAndroid.SHORT);
+        navigation.goBack();
+      } else {
+        Alert.alert('Error', response.data?.message || `Server Error (${response.status})`);
+      }
+    } catch (error: any) {
+      console.error('Save failed:', error);
+      const errMsg = error.response?.data?.message || error.message || 'Failed to save student';
+      Alert.alert('Error', errMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -94,7 +217,9 @@ const CreateStudent = () => {
   const handlePickFromGallery = () => {
     const options: ImageLibraryOptions = {
       mediaType: "photo",
-      quality: 1,
+      quality: 0.1,
+      maxWidth: 600, // Enforce small resolution for fast upload
+      maxHeight: 600,
     };
 
     launchImageLibrary(options, (res) => {
@@ -109,7 +234,9 @@ const CreateStudent = () => {
   const handleOpenCamera = () => {
     const options: CameraOptions = {
       mediaType: "photo",
-      quality: 1,
+      quality: 0.1,
+      maxWidth: 600, // Enforce small resolution for fast upload
+      maxHeight: 600,
       saveToPhotos: true,
     };
 
@@ -124,7 +251,7 @@ const CreateStudent = () => {
 
   return (
     <View className='flex-1 bg-white'>
-      <AppHeader title='New Student' />
+      <AppHeader title={headerTitle} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -191,25 +318,26 @@ const CreateStudent = () => {
           </View>
 
 
-          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Name</Text>
+          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Name <Text className="text-red-500">*</Text></Text>
           <TextInput
             value={name}
             onChangeText={setName}
             placeholder="Full name"
             className="border border-[#E0E5E9] rounded-xl p-3 text-[#000]"
+            maxLength={50}
           />
 
           {/* Standard */}
-          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Standard</Text>
+          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Standard <Text className="text-red-500">*</Text></Text>
           <View className="border border-[#E5E6EA] rounded-xl px-2">
             <Picker
-              selectedValue={standard}
-              onValueChange={setStandard}
+              selectedValue={standardId}
+              onValueChange={setStandardId}
               style={{ height: 50 }}
             >
-              <Picker.Item label="Select Standard" value="" />
+              <Picker.Item label="Select Standard" value={0} />
               {standards.map((item) => (
-                <Picker.Item key={item} label={item} value={item} />
+                <Picker.Item key={item.id} label={item.name} value={item.id} />
               ))}
             </Picker>
           </View>
@@ -221,15 +349,17 @@ const CreateStudent = () => {
             onChangeText={setSchool}
             placeholder="School"
             className="border border-[#E0E5E9] rounded-xl p-3 text-[#000]"
+            maxLength={100}
           />
 
           {/* Medium */}
-          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Medium</Text>
+          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Medium <Text className="text-red-500">*</Text></Text>
           <View className="border border-[#E5E6EA] rounded-xl">
-            <Picker selectedValue={medium} onValueChange={setMedium} style={{ height: 50 }}>
-              <Picker.Item label="Select Medium" value="" />
-              <Picker.Item label="Tamil" value="Tamil" />
-              <Picker.Item label="English" value="English" />
+            <Picker selectedValue={mediumId} onValueChange={setMediumId} style={{ height: 50 }}>
+              <Picker.Item label="Select Medium" value={0} />
+              {mediums.map((item) => (
+                <Picker.Item key={item.id} label={item.name} value={item.id} />
+              ))}
             </Picker>
           </View>
 
@@ -241,10 +371,11 @@ const CreateStudent = () => {
             placeholder="Age"
             keyboardType="number-pad"
             className="border border-[#E0E5E9] rounded-xl p-3 text-[#000]"
+            maxLength={2}
           />
 
           {/* Gender */}
-          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Gender</Text>
+          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Gender <Text className="text-red-500">*</Text></Text>
           <View
             style={{
               borderWidth: 1,
@@ -280,30 +411,25 @@ const CreateStudent = () => {
           </View>
 
           {/* DOB */}
-          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Date of Birth</Text>
-          <TouchableOpacity onPress={() => setShowDobPicker(true)} className="border border-[#E0E5E9] rounded-xl p-3">
-            <Text className="text-[#000]">{dob || "Select Date of Birth"}</Text>
-          </TouchableOpacity>
-          {showDobPicker && (
-            <DateTimePicker
-              value={dob ? new Date(dob) : new Date()}
-              mode="date"
-              display="calendar"
-              onChange={(e, date) => {
-                setShowDobPicker(false);
-                if (date) setDob(date.toISOString().slice(0, 10));
-              }}
-            />
-          )}
+          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Date of Birth (DD-MM-YYYY) <Text className="text-red-500">*</Text></Text>
+          <TextInput
+            value={dob}
+            onChangeText={setDob}
+            placeholder="DD-MM-YYYY"
+            keyboardType="number-pad"
+            className="border border-[#E0E5E9] rounded-xl p-3 text-[#000]"
+            maxLength={10}
+          />
 
           {/* Phone */}
-          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Phone</Text>
+          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Phone <Text className="text-red-500">*</Text></Text>
           <TextInput
             value={phone}
             onChangeText={setPhone}
             placeholder="Phone number"
             keyboardType="phone-pad"
             className="border border-[#E0E5E9] rounded-xl p-3 text-[#000]"
+            maxLength={10}
           />
 
           {/* Place */}
@@ -313,6 +439,7 @@ const CreateStudent = () => {
             onChangeText={setPlace}
             placeholder="Place"
             className="border border-[#E0E5E9] rounded-xl p-3 text-[#000]"
+            maxLength={50}
           />
 
           {/* Address */}
@@ -324,12 +451,13 @@ const CreateStudent = () => {
             multiline
             className="border border-[#E0E5E9] rounded-xl p-3 text-[#000] h-28"
             textAlignVertical="top"
+            maxLength={200}
           />
 
           {/* Joining Date */}
-          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Joining Date</Text>
+          <Text className="text-[15px] text-[#111827] font-medium mb-2 mt-3">Joining Date (DD-MM-YYYY) <Text className="text-red-500">*</Text></Text>
           <TouchableOpacity onPress={() => setShowJoinPicker(true)} className="border border-[#E0E5E9] rounded-xl p-3">
-            <Text className="text-[#000]">{joingingDate || "Select Joining Date"}</Text>
+            <Text className="text-[#000]">{formatToUIDate(joingingDate) || "Select Joining Date"}</Text>
           </TouchableOpacity>
 
           {showJoinPicker && (
@@ -356,58 +484,60 @@ const CreateStudent = () => {
           </View>
 
         </ScrollView>
-
       </KeyboardAvoidingView>
 
-
-      <View
-        style={{
-          position: "absolute",
-          bottom: insets.bottom || 10,
-          left: 0,
-          right: 0,
-          backgroundColor: "#fff",
-          paddingVertical: 10,
-          paddingHorizontal: 20,
-          borderTopWidth: 1,
-          borderColor: "#ddd",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          zIndex: 100,
-        }}
-      >
-        <TouchableOpacity
+      {/* Sticky Bottom Buttons - Hidden when keyboard is open */}
+      {!isKeyboardVisible && (
+        <View
           style={{
-            flex: 1,
-            marginRight: 8,
-            backgroundColor: "#ccc",
-            paddingVertical: 12,
-            borderRadius: 10,
+            position: "absolute",
+            bottom: insets.bottom || 10,
+            left: 0,
+            right: 0,
+            backgroundColor: "#fff",
+            paddingVertical: 10,
+            paddingHorizontal: 20,
+            borderTopWidth: 1,
+            borderColor: "#ddd",
+            flexDirection: "row",
+            justifyContent: "space-between",
             alignItems: "center",
-          }}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={{ color: "#333", fontWeight: "600" }}>Cancel</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          disabled={loading}
-          style={{
-            flex: 1,
-            marginLeft: 8,
-            backgroundColor: loading ? "#9CA3AF" : "#007BFF",
-            paddingVertical: 12,
-            borderRadius: 10,
-            alignItems: "center",
-            opacity: loading ? 0.8 : 1,
+            zIndex: 100,
           }}
         >
-          <Text style={{ color: "#fff", fontWeight: "600" }}>
-            {loading ? "Processing..." : "Publish"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              marginRight: 8,
+              backgroundColor: "#ccc",
+              paddingVertical: 12,
+              borderRadius: 10,
+              alignItems: "center",
+            }}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={{ color: "#333", fontWeight: "600" }}>Cancel</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            disabled={loading}
+            style={{
+              flex: 1,
+              marginLeft: 8,
+              backgroundColor: loading ? "#9CA3AF" : "#007BFF",
+              paddingVertical: 12,
+              borderRadius: 10,
+              alignItems: "center",
+              opacity: loading ? 0.8 : 1,
+            }}
+            onPress={handleSave}
+          >
+            <Text style={{ color: "#fff", fontWeight: "600" }}>
+              {loading ? "Processing..." : "Publish"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* modal */}
       <RBSheet

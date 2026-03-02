@@ -1,79 +1,135 @@
-import { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { TextInput } from "react-native-gesture-handler";
-import AntDesign from 'react-native-vector-icons/AntDesign';
+import React, { useState, useEffect, useMemo } from "react";
+import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl, Alert, ToastAndroid } from "react-native";
 import StudentsCard from "../component/studentsCard";
 import AppHeader from "../utils/AppBar";
-import { useNavigation } from "@react-navigation/core";
+import { useNavigation, useIsFocused, useRoute } from "@react-navigation/native";
+import apiClient from "../api/apiBaseUrl";
+import { Student } from "../type/type";
+const StudentTab = () => {
+    const route = useRoute<any>();
+    const { initialSearch } = route.params || {} as { initialSearch?: string };
 
-
-
-type data = {
-    id: number;
-    name: string;
-    gender: string;
-    phone: string;
-    status: string;
-}
-const dummyStudents: data[] = [
-    {
-        id: 1,
-        name: "Aarav Sharma",
-        gender: "Male",
-        phone: "919876543210",
-        status: "Active",
-    },
-    {
-        id: 2,
-        name: "Diya Patel",
-        gender: "Female",
-        phone: "919812345678",
-        status: "Inactive",
-    },
-    {
-        id: 3,
-        name: "Kavin Raj",
-        gender: "Male",
-        phone: "919900112233",
-        status: "Active",
-    },
-    {
-        id: 4,
-        name: "Sahana Reddy",
-        gender: "Female",
-        phone: "919955667788",
-        status: "Active",
-    },
-    {
-        id: 5,
-        name: "Vikram Kumar",
-        gender: "Male",
-        phone: "919944556677",
-        status: "Inactive",
-    },
-];
-
-const Student = () => {
     const [selected, setSelected] = useState("All Student");
-    const navigation = useNavigation<any>()
+    const [students, setStudents] = useState<Student[]>([]);
+    const [searchText, setSearchText] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [totalStudents, setTotalStudents] = useState(0);
 
-    const totalCount = dummyStudents.length;
-    const maleCount = dummyStudents.filter(s => s.gender === "Male").length;
-    const femaleCount = dummyStudents.filter(s => s.gender === "Female").length;
+    const navigation = useNavigation<any>();
+    const isFocused = useIsFocused();
 
-    const buttons = [
-        { label: "All Student", count: totalCount },
-        { label: "Female", count: femaleCount },
-        { label: "Male", count: maleCount },
-    ]; const themeColor = "#007BFF";
+    const fetchStudents = async (isRefreshing = false) => {
+        if (!isRefreshing) setLoading(true);
+        try {
+            const response = await apiClient.get('/students/all');
+            if (Array.isArray(response.data)) {
+                let processedStudents = response.data;
+
+                if (initialSearch === 'birthday') {
+                    const today = new Date();
+                    const bdayStudents = response.data.filter((s: Student) => {
+                        if (!s.dateOfBirth) return false;
+                        const dob = new Date(s.dateOfBirth);
+                        return dob.getDate() === today.getDate() && dob.getMonth() === today.getMonth();
+                    });
+                    processedStudents = bdayStudents;
+                }
+
+                // Sort by ID descending (newest first)
+                const sorted = processedStudents.sort((a, b) => b.id - a.id);
+                setStudents(sorted);
+                setTotalStudents(sorted.length); // Set totalStudents based on processed and sorted students
+            }
+        } catch (error) {
+            console.error('Failed to fetch students:', error);
+            // No need to set students or totalStudents here, as it's an error state
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isFocused) {
+            fetchStudents();
+        }
+    }, [isFocused]);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchStudents(true);
+    };
+
+    const filteredStudents = useMemo(() => {
+        return students.filter(student => {
+            const matchesFilter =
+                selected === "All Student" ||
+                (selected === "Male" && student.gender === "Male") ||
+                (selected === "Female" && student.gender === "Female");
+
+            const matchesSearch =
+                student.name.toLowerCase().includes(searchText.toLowerCase()) ||
+                student.phone.includes(searchText) ||
+                student.standardName?.toLowerCase().includes(searchText.toLowerCase());
+
+            return matchesFilter && matchesSearch;
+        });
+    }, [students, selected, searchText]);
+
+    const stats = useMemo(() => {
+        const total = students.length;
+        const male = students.filter(s => s.gender === "Male").length;
+        const female = students.filter(s => s.gender === "Female").length;
+        return [
+            { label: "All Student", count: total },
+            { label: "Female", count: female },
+            { label: "Male", count: male },
+        ];
+    }, [students]);
+
+    const handleDelete = async (id: number) => {
+        Alert.alert(
+            "Delete Student",
+            "Are you sure you want to delete this student?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const response = await apiClient.delete(`/students/delete/${id}`);
+                            if (response.status === 200) {
+                                ToastAndroid.show("Student deleted successfully", ToastAndroid.SHORT);
+                                fetchStudents(); // Refresh list
+                            }
+                        } catch (error) {
+                            console.error("Failed to delete student:", error);
+                            Alert.alert("Error", "Failed to delete student. Please try again.");
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const themeColor = "#007BFF";
 
     return (
-        <View className="flex-1 bg-white ">
-            <AppHeader title="Students" showSearch={true} rightIcon="add-outline" onRightPress={() => navigation.navigate("CreateStudent", { headerTitle: "New Student" })}
+        <View className="flex-1 bg-white">
+            <AppHeader
+                title="Students"
+                showSearch={true}
+                searchValue={searchText}
+                onSearchChange={setSearchText}
+                searchPlaceholder="Search by Name, Phone, Class..."
+                rightIcon="add-outline"
+                onRightPress={() => navigation.navigate("CreateStudent", { headerTitle: "New Student" })}
             />
 
-            <View className="flex flex-row  px-2 border border-[#E5E6EA] py-2">
-                {buttons.map((btn) => {
+            <View className="flex flex-row px-2 border border-[#E5E6EA] py-2">
+                {stats.map((btn) => {
                     const isSelected = selected === btn.label;
 
                     return (
@@ -99,7 +155,6 @@ const Student = () => {
                                 {btn.label}
                             </Text>
 
-                            {/* COUNT BADGE */}
                             <View
                                 style={{
                                     backgroundColor: isSelected ? themeColor : "#E5E6EA",
@@ -122,26 +177,36 @@ const Student = () => {
                 })}
             </View>
 
-
-
-            {/* <Text className="mt-4 text-[#000000] font-bold font-Jost font-600 mb-4 px-3 text-[16px]">Showing 5 Students</Text> */}
-
-            <ScrollView showsVerticalScrollIndicator={false} className="px-3 mt-4">
-                {dummyStudents.map((item) => (
-                    <StudentsCard
-                        key={item.id}
-                        id={item.id}
-                        name={item.name}
-                        gender={item.gender}
-                        phone={item.phone}
-                        status={item.status}
-                    />
-                ))}
-            </ScrollView>
-
-
+            {loading ? (
+                <View className="flex-1 justify-center items-center">
+                    <ActivityIndicator size="large" color={themeColor} />
+                </View>
+            ) : (
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    className="px-3 mt-4"
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
+                >
+                    {filteredStudents.length > 0 ? (
+                        filteredStudents.map((item) => (
+                            <StudentsCard
+                                key={item.id}
+                                student={item}
+                                onDelete={() => handleDelete(item.id)}
+                            />
+                        ))
+                    ) : (
+                        <View className="items-center mt-20">
+                            <Text className="text-gray-400">No students found</Text>
+                        </View>
+                    )
+                    }
+                </ScrollView>
+            )}
         </View>
     );
 };
 
-export default Student;
+export default StudentTab;

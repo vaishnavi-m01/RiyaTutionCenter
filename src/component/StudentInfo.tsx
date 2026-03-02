@@ -5,6 +5,8 @@ import Fontisto from 'react-native-vector-icons/Fontisto';
 import Entypo from 'react-native-vector-icons/Entypo';
 import { useRef } from "react";
 import RBSheet from "react-native-raw-bottom-sheet";
+import { Student } from "../type/type";
+import { formatDate } from "../utils/dateFormatter";
 
 
 interface RBSheetRef {
@@ -12,10 +14,15 @@ interface RBSheetRef {
     close: () => void;
 }
 
-const StudentInfo = () => {
+interface StudentInfoProps {
+    student: Student;
+}
+
+const StudentInfo = ({ student }: StudentInfoProps) => {
     const refRBSheet = useRef<RBSheetRef>(null);
 
     const openFilterSheet = () => refRBSheet.current?.open();
+
     return (
         <View className="w-full">
             <TouchableOpacity onPress={openFilterSheet}>
@@ -23,51 +30,46 @@ const StudentInfo = () => {
                     <View className="flex-row gap-1 justify-between items-start pb-2">
 
                         <View className="items-center">
-                            <Image source={require("../assets/image/Person.png")} style={{ width: 73, height: 73 }}></Image>
+                            <Image
+                                source={student.imageUrl ? { uri: student.imageUrl } : require("../assets/image/Person.png")}
+                                style={{ width: 73, height: 73 }}
+                                className="rounded-full"
+                            />
                         </View>
 
 
-                        <View className="flex-1 py-2">
-                            <Text className="font-Jost font-medium text-[14px]">Vaishnavi</Text>
-                            <Text className="font-Jost text-[#151515] font-medium text-[12px]">+919876543210</Text>
+                        <View className="flex-1 py-2 px-3">
+                            <Text className="font-Jost font-medium text-[16px] text-[#111827]">{student.name}</Text>
+                            <Text className="font-Jost text-[#6B7280] font-medium text-[13px]">+{student.phone}</Text>
 
 
-                            <View className="flex-row gap-3 mt-6">
+                            <View className="flex-row gap-3 mt-4">
 
-                                {/* Active Filter */}
-                                <View className="bg-[#EFF0F4] rounded-full px-4 py-2 flex-row items-center">
+                                {/* Status Badge */}
+                                <View className={`rounded-full px-4 py-1.5 flex-row items-center border ${student.activeStatus ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+                                    }`}>
                                     <View
                                         style={{
-                                            width: 10,
-                                            height: 10,
-                                            borderRadius: 10,
-                                            backgroundColor: "#22C55E",
+                                            width: 8,
+                                            height: 8,
+                                            borderRadius: 4,
+                                            backgroundColor: student.activeStatus ? "#22C55E" : "#EF4444",
                                             marginRight: 6,
                                         }}
                                     />
-                                    <Text className="text-sm text-gray-800 font-medium">Active</Text>
+                                    <Text className={`text-[12px] font-semibold ${student.activeStatus ? "text-green-700" : "text-red-700"
+                                        }`}>
+                                        {student.activeStatus ? "Active" : "Inactive"}
+                                    </Text>
                                 </View>
-
-                                {/* Inactive Filter */}
-                                <View className="bg-[#EFF0F4] rounded-full px-4 py-2 flex-row items-center">
-                                    <Text className="text-sm text-gray-800 font-medium">Inactive</Text>
-                                </View>
-
                             </View>
-
-
                         </View>
 
                         <View className="items-end pt-2">
                             <View className="flex-row gap-2 mb-2">
-                                <Fontisto name="whatsapp" color="#25D366" size={26} />
-
-                                {/* <Entypo name="dots-three-vertical" color="#000" size={20} /> */}
-
-
-                            </View>
-                            <View className="pt-6">
-
+                                <TouchableOpacity>
+                                    <Fontisto name="whatsapp" color="#25D366" size={26} />
+                                </TouchableOpacity>
                             </View>
                         </View>
 
@@ -80,7 +82,7 @@ const StudentInfo = () => {
             {/* Bottom Sheet */}
             <RBSheet
                 ref={refRBSheet}
-                height={450}
+                height={480}
                 openDuration={250}
                 draggable
                 closeOnPressMask
@@ -90,7 +92,6 @@ const StudentInfo = () => {
                         backgroundColor: "#fff",
                         borderTopLeftRadius: 20,
                         borderTopRightRadius: 20,
-                        // paddingBottom: 20,
                         overflow: "visible"
                     },
                     draggableIcon: { backgroundColor: "#cbd5e1" },
@@ -110,70 +111,62 @@ const StudentInfo = () => {
                     }}
                 >
                     <Text className="text-[#111827] font-Jost text-[20px] font-medium">
-                        Student Info
+                        Student Details
                     </Text>
                 </View>
 
-                {/* 2 COLUMNS */}
-                <View className="flex-row px-4 mt-4 gap-4">
+                {/* Content */}
+                <View className="px-4 mt-4">
+                    <View className="flex-row gap-4">
 
-                    {/* LEFT COLUMN */}
-                    <View className="w-1/2">
-                        <Text className="text-[#111827] font-Jost text-md">School</Text>
-                        <Text
-                            className="text-[#111827] font-Jost font-medium text-[16px] flex-wrap"
-                        >
-                            Baren Bruck Higher Secondary School
-                        </Text>
+                        {/* LEFT COLUMN */}
+                        <View className="flex-1">
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Full Name</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px] mb-4">{student.name}</Text>
 
-                        <Text className="mt-4 text-[#111827] font-Jost text-md">Gender</Text>
-                        <Text className="text-[#111827] font-Jost font-medium text-[16px]">
-                            Female
-                        </Text>
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Gender</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px] mb-4">{student.gender}</Text>
 
-                        <Text className="mt-4 text-[#111827] font-Jost text-md">Age</Text>
-                        <Text className="text-[#111827] font-Jost font-medium text-[16px]">
-                            16
-                        </Text>
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Date of Birth</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px] mb-4">{student.dateOfBirth || "N/A"}</Text>
 
-                        <Text className="mt-4 text-[#111827] font-Jost text-md">Gender</Text>
-                        <Text className="text-[#111827] font-Jost font-medium text-[16px]">
-                            Female
-                        </Text>
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Joining Date</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px] mb-4">{student.joiningDate || "N/A"}</Text>
 
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Phone</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px]">+{student.phone}</Text>
+                        </View>
 
-                        <Text className="mt-4 text-[#111827] font-Jost text-md">Phone</Text>
-                        <Text className="text-[#111827] font-Jost font-medium text-[16px]">
-                            +91 6385542771
-                        </Text>
+                        {/* RIGHT COLUMN */}
+                        <View className="flex-1">
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Standard</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px] mb-4">{student.standardName || "N/A"}</Text>
+
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Medium</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px] mb-4">{student.mediumName || "N/A"}</Text>
+
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Age</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px] mb-4">{student.age || "N/A"}</Text>
+
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">School</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px] mb-4 flex-wrap">{student.school || "N/A"}</Text>
+
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Address</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px] flex-wrap">{student.address || "N/A"}</Text>
+                        </View>
                     </View>
 
-                    {/* RIGHT COLUMN */}
-                    <View className="w-1/2">
-                        <Text className="text-[#111827] font-Jost text-md">Class</Text>
-                        <Text className="text-[#111827] font-Jost font-medium text-[16px]">
-                            11th Standard
-                        </Text>
+                    {/* BOTTOM ROW - Dates */}
+                    <View className="flex-row gap-4 mt-6">
+                        <View className="flex-1">
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Created Date</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px]">{formatDate(student.createdDate)}</Text>
+                        </View>
 
-                        <Text className="mt-4 text-[#111827] font-Jost text-md">Fees</Text>
-                        <Text className="text-[#111827] font-Jost font-medium text-[16px]">
-                            ₹3000 / Month
-                        </Text>
-
-
-                        <Text className="mt-4 text-[#111827] font-Jost text-md">Place</Text>
-                        <Text className="text-[#111827] font-Jost font-medium text-[16px]">
-                            Surandai
-                        </Text>
-
-
-
-                        <Text className="mt-4 text-[#111827] font-Jost text-md">Address</Text>
-                        <Text className="text-[#111827] font-Jost font-medium text-[16px] flex-wrap">
-                            5-4-57(1) KamaRaj Nagar
-                        </Text>
-
-            
+                        <View className="flex-1">
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Modified Date</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px]">{formatDate(student.modifiedDate)}</Text>
+                        </View>
                     </View>
                 </View>
 
