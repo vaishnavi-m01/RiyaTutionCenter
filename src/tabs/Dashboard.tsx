@@ -249,6 +249,31 @@ const Dashboard = () => {
                   </ScrollView>
                 </View>
               </View>
+
+              <View className="flex-1 bg-white rounded-2xl p-4 border border-[#E5E6EA] shadow-sm">
+                <View className="flex-row items-center justify-between mb-3">
+                  <Text className="text-[14px] font-bold text-gray-800">Pending</Text>
+                  <View className="bg-red-100 px-2 py-0.5 rounded-full">
+                    <Text className="text-[10px] font-bold text-red-700">{dashboardData?.pendingStudentNames?.length || 0}</Text>
+                  </View>
+                </View>
+                <View className="max-h-40">
+                  <ScrollView nestedScrollEnabled={true}>
+                    <View className="flex-row flex-wrap gap-1.5">
+                      {dashboardData?.pendingStudentNames?.length > 0 ? (
+                        dashboardData.pendingStudentNames.map((name: string, i: number) => (
+                          <View key={i} className="bg-red-50 px-2 py-1 rounded-lg border border-red-100 flex-row items-center gap-1">
+                            <Ionicons name="alert-circle" size={12} color="#DC3545" />
+                            <Text className="text-[12px] text-red-700 font-medium">{name}</Text>
+                          </View>
+                        ))
+                      ) : (
+                        <Text className="text-[12px] text-gray-400 italic">No pending fees</Text>
+                      )}
+                    </View>
+                  </ScrollView>
+                </View>
+              </View>
             </View>
           </View>
 
