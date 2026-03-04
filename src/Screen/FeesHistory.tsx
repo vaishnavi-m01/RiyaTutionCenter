@@ -182,7 +182,7 @@ const FeesHistory = () => {
                                         key={item.id}
                                         id={item.id}
                                         name={item.studentName}
-                                        image={item.image || "../assets/image/Person.png"}
+                                        image={item.imageUrl}
                                         standard={item.standardName}
                                         status={item.status}
                                         amount={item.amount}

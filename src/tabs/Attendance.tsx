@@ -1,6 +1,6 @@
 import { Image, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert, ToastAndroid } from "react-native";
 import AppHeader from "../utils/AppBar";
-import { useNavigation, useIsFocused } from "@react-navigation/core";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -13,6 +13,7 @@ type AttendanceRecord = {
   studentId: number;
   date: string;
   status: "Present" | "Absent";
+  imageUrl?: string;
 };
 
 type MergedStudent = Student & {
@@ -23,7 +24,7 @@ type MergedStudent = Student & {
 
 const Attendance = () => {
   const navigation = useNavigation<any>();
-  const isFocused = useIsFocused();
+
 
   const tabs = ["All", "Present", "Absent"];
   const [selectedTab, setSelectedTab] = useState("All");
@@ -49,15 +50,11 @@ const Attendance = () => {
   }, [selectedDate]);
 
   // Fetch Master Student List
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       const response = await apiClient.get('/students/all');
       if (Array.isArray(response.data)) {
-        // Filter only Active students if needed, or show all. 
-        // Showing all allows marking attendance for even those who might have just left or are inactive.
-        // Usually, only 'Active' students should appear on Attendance list.
         const activeStudents = response.data.filter((s: Student) => s.activeStatus === true || s.activeStatus === undefined);
-        // Sort by ID descending (newest first)
         const sorted = activeStudents.sort((a: Student, b: Student) => b.id - a.id);
         setAllStudents(sorted);
       }
@@ -65,7 +62,7 @@ const Attendance = () => {
       console.error("Failed to fetch students:", error);
       ToastAndroid.show("Failed to fetch student list", ToastAndroid.SHORT);
     }
-  };
+  }, []);
 
   // Fetch Attendance for Date
   const fetchAttendance = useCallback(async () => {
@@ -82,7 +79,8 @@ const Attendance = () => {
             id: record.id,
             studentId: record.studentId,
             status: record.status,
-            date: record.date
+            date: record.date,
+            imageUrl: record.imageUrl
           };
         });
       }
@@ -97,19 +95,17 @@ const Attendance = () => {
     }
   }, [apiDate]);
 
-  useEffect(() => {
-    if (isFocused) {
-      // First load: Fetch students once, and attendance for current date
-      fetchStudents().then(() => fetchAttendance());
-    }
-  }, [isFocused]);
-
   // Refetch attendance when date changes
   useEffect(() => {
-    if (isFocused) {
+    fetchAttendance();
+  }, [apiDate, fetchAttendance]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchStudents();
       fetchAttendance();
-    }
-  }, [apiDate]);
+    }, [fetchStudents, fetchAttendance])
+  );
 
 
   const onDateChange = (event: any, date: any) => {
@@ -301,6 +297,7 @@ const Attendance = () => {
             <AttendanceCard
               key={item.id}
               name={item.name}
+              imageUrl={item.imageUrl}
               status={item.attendanceStatus}
               onStatusChange={(status) => markAttendance(item, status)}
               onPress={() => navigation.navigate("StudentDetails", { student: item })}

@@ -12,6 +12,7 @@ export interface Student {
     dateOfBirth: string;
     joiningDate: string;
     address: string;
+    place: string;
     imageUrl: string;
     activeStatus: boolean;
     createdDate?: string;

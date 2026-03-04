@@ -158,6 +158,7 @@ const StudentDetails = () => {
                 <View className="border border-[#E0E5E9] rounded-2xl p-4 mt-4 bg-white shadow-sm">
                     <Text className="text-base font-semibold text-[#111827] mb-1">📘 {student.standardName || "N/A"} Standard</Text>
                     <Text className="text-sm text-[#4B5563] mb-1">💰 Medium: <Text className="font-medium text-[#111827]">{student.mediumName || "N/A"}</Text></Text>
+                    {student.place && <Text className="text-sm text-[#4B5563] mb-1">📍 Place: <Text className="font-medium text-[#111827]">{student.place}</Text></Text>}
                     {student.school && <Text className="text-sm text-[#4B5563]">🏫 School: <Text className="font-medium text-[#111827]">{student.school}</Text></Text>}
                 </View>
 

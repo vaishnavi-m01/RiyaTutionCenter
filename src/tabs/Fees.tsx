@@ -1,7 +1,8 @@
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator, RefreshControl } from "react-native"
 import AppHeader from "../utils/AppBar"
 import { useNavigation } from "@react-navigation/core"
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
+
 import { useFocusEffect } from '@react-navigation/native';
 import FeesCard from "../component/FeesCard";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -46,7 +47,7 @@ const Fees = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   // Fetch fees data
-  const fetchFees = async () => {
+  const fetchFees = useCallback(async () => {
     try {
       setLoading(true);
       const [feesResponse, studentsResponse] = await Promise.all([
@@ -68,13 +69,13 @@ const Fees = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   // Refresh fees when tab is focused
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       fetchFees();
-    }, [])
+    }, [fetchFees])
   );
 
   // Filter data based on search and selected tab
@@ -240,7 +241,7 @@ const Fees = () => {
                   key={item.id}
                   id={item.id}
                   name={item.studentName}
-                  image={item.image || "../assets/image/Person.png"}
+                  image={item.imageUrl}
                   standard={item.standardName}
                   status={item.status}
                   amount={item.amount}

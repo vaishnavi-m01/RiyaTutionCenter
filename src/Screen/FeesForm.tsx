@@ -194,7 +194,7 @@ const FeesForm = () => {
                                 />
                                 <Text className="text-[#111827] text-[14px] font-Jost font-regular pr-4">Cash</Text>
                                 <RadioButton
-                                    value="online"
+                                    value="upi"
                                     color="#007BFF"
                                     uncheckedColor="#9CA3AF"
                                 />

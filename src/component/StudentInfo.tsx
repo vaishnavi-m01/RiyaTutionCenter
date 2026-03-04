@@ -151,6 +151,9 @@ const StudentInfo = ({ student }: StudentInfoProps) => {
                             <Text className="text-[#6B7280] font-Jost text-[13px]">School</Text>
                             <Text className="text-[#111827] font-Jost font-medium text-[15px] mb-4 flex-wrap">{student.school || "N/A"}</Text>
 
+                            <Text className="text-[#6B7280] font-Jost text-[13px]">Place</Text>
+                            <Text className="text-[#111827] font-Jost font-medium text-[15px] mb-4">{student.place || "N/A"}</Text>
+
                             <Text className="text-[#6B7280] font-Jost text-[13px]">Address</Text>
                             <Text className="text-[#111827] font-Jost font-medium text-[15px] flex-wrap">{student.address || "N/A"}</Text>
                         </View>

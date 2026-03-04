@@ -32,6 +32,18 @@ const Settings = () => {
                     <Text className="text-[18px] text-gray-400 ml-2">›</Text>
                 </Pressable>
 
+                {/* Standard Settings */}
+                <Pressable className="flex-row items-center py-3 border-b border-gray-200">
+                    <View className="w-10 h-10 rounded-xl bg-orange-50 items-center justify-center mr-3">
+                        <Text>📄</Text>
+                    </View>
+                    <TouchableOpacity className="flex-1" onPress={() => navigation.navigate("Standard")}>
+                        <Text className="text-[15px] font-semibold text-gray-800">Standard</Text>
+                        <Text className="text-[12px] text-gray-500 mt-1">Manage classes/standards</Text>
+                    </TouchableOpacity>
+                    <Text className="text-[18px] text-gray-400 ml-2">›</Text>
+                </Pressable>
+
                 {/* Medium Settings */}
                 <Pressable className="flex-row items-center py-3 border-b border-gray-200">
                     <View className="w-10 h-10 rounded-xl bg-purple-50 items-center justify-center mr-3">

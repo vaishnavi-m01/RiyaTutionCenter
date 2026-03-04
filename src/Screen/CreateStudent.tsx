@@ -51,7 +51,7 @@ const CreateStudent = () => {
   const [mediumId, setMediumId] = useState(editStudent?.mediumId || 0);
   const [mediums, setMediums] = useState<Medium[]>([]);
   const [age, setAge] = useState(editStudent?.age?.toString() || "");
-  const [place, setPlace] = useState(""); // Not in Student interface but in UI
+  const [place, setPlace] = useState(editStudent?.place || "");
   const [address, setAddress] = useState(editStudent?.address || "");
   const [status, setStatus] = useState(editStudent?.activeStatus !== false ? 'Active' : 'Inactive');
   const [joingingDate, setJoingingDate] = useState(editStudent?.joiningDate || new Date().toISOString().slice(0, 10));
@@ -182,6 +182,7 @@ const CreateStudent = () => {
         dateOfBirth: formatToBackendDate(dob),
         joiningDate: formatToBackendDate(joingingDate),
         address: address.trim(),
+        place: place.trim(),
         activeStatus: status === 'Active',
         imageUrl: cloudinaryUrl
       };

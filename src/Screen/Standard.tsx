@@ -94,13 +94,15 @@ const Standard = () => {
                 response = await apiClient.put(`/standard/update/${editingId}`, {
                     id: editingId,
                     name: name.trim(),
-                    modifiedDate: currentDate
+                    createdDate: "",
+                    modifiedDate: ""
                 });
             } else {
                 response = await apiClient.post("/standard/create", {
+                    id: 0,
                     name: name.trim(),
-                    createdDate: currentDate,
-                    modifiedDate: currentDate
+                    createdDate: "",
+                    modifiedDate: ""
                 });
             }
 
@@ -178,42 +180,55 @@ const Standard = () => {
                     }
                 >
                     {standards.length === 0 ? (
-                        <View className="flex-1 justify-center items-center mt-20">
-                            <Ionicons name="school-outline" size={64} color="#D1D5DB" />
-                            <Text className="text-gray-500 mt-4">No standards found</Text>
+                        <View className="flex-1 justify-center items-center mt-32 px-10">
+                            <View className="bg-orange-50 p-8 rounded-full mb-6">
+                                <Ionicons name="school-outline" size={80} color="#F97316" />
+                            </View>
+                            <Text className="text-xl font-bold text-gray-900 text-center">No Standards Yet</Text>
+                            <Text className="text-gray-500 mt-2 text-center leading-5">Add your first standard/class to get started.</Text>
+                            <TouchableOpacity
+                                onPress={() => handleOpenSheet()}
+                                className="mt-8 bg-orange-600 px-8 py-4 rounded-2xl shadow-lg shadow-orange-200"
+                            >
+                                <Text className="text-white font-bold text-lg">Add First Standard</Text>
+                            </TouchableOpacity>
                         </View>
                     ) : (
                         standards.map((item) => (
                             <View
                                 key={item.id}
-                                className="mb-3 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm"
+                                className="mb-4 flex-row items-center p-4 bg-white rounded-2xl border border-gray-100"
                             >
-                                <View className="flex-row justify-between items-center mb-2">
-                                    <Text className="text-[17px] font-bold text-gray-900 flex-1">
-                                        {item.name}
-                                    </Text>
-
-                                    <View className="flex-row gap-2">
-                                        <TouchableOpacity
-                                            onPress={() => handleOpenSheet(item)}
-                                            className="p-2 bg-blue-50 rounded-full"
-                                        >
-                                            <Feather name="edit" color="#3B82F6" size={19} />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() => handleDelete(item.id)}
-                                            className="p-2 bg-red-50 rounded-full"
-                                        >
-                                            <AntDesign name="delete" color="#EF4444" size={19} />
-                                        </TouchableOpacity>
-                                    </View>
+                                {/* Left Icon */}
+                                <View className="w-12 h-12 rounded-xl bg-orange-50 items-center justify-center">
+                                    <Ionicons name="school-outline" size={24} color="#F97316" />
                                 </View>
 
-                                {item.createdDate && (
-                                    <Text className="text-[12px] text-gray-500">
-                                        Created: {formatDate(item.createdDate)}
+                                {/* Center Content */}
+                                <View className="flex-1 ml-4">
+                                    <Text className="text-[17px] font-bold text-gray-900">
+                                        {item.name}
                                     </Text>
-                                )}
+                                    <Text className="text-[11px] font-medium text-gray-400 uppercase tracking-widest mt-0.5">
+                                        Academic Class
+                                    </Text>
+                                </View>
+
+                                {/* Right Actions */}
+                                <View className="flex-row gap-2">
+                                    <TouchableOpacity
+                                        onPress={() => handleOpenSheet(item)}
+                                        className="w-10 h-10 items-center justify-center rounded-full"
+                                    >
+                                        <Feather name="edit" color="#3B82F6" size={22} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={() => handleDelete(item.id)}
+                                        className="w-10 h-10 items-center justify-center rounded-full"
+                                    >
+                                        <AntDesign name="delete" color="#EF4444" size={22} />
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         ))
                     )}
@@ -222,51 +237,58 @@ const Standard = () => {
 
             <RBSheet
                 ref={refRBSheet}
-                height={300}
+                height={320}
                 openDuration={250}
                 draggable
                 closeOnPressMask
                 customStyles={{
-                    wrapper: { backgroundColor: "rgba(0,0,0,0.5)" },
+                    wrapper: { backgroundColor: "rgba(0,0,0,0.4)" },
                     container: {
                         backgroundColor: "#fff",
-                        borderTopLeftRadius: 32,
-                        borderTopRightRadius: 32,
-                        padding: 24,
+                        borderTopLeftRadius: 40,
+                        borderTopRightRadius: 40,
+                        paddingHorizontal: 28,
+                        paddingTop: 12,
+                        paddingBottom: 32,
                     },
-                    draggableIcon: { backgroundColor: "#E5E7EB", width: 40 },
+                    draggableIcon: { backgroundColor: "#E5E7EB", width: 50, height: 5, borderRadius: 10 },
                 }}
             >
-                <Text className="text-[20px] font-bold text-gray-900 mb-6">
-                    {editingId ? "Update Standard" : "Add New Standard"}
-                </Text>
+                <View className="flex-row justify-between items-center mt-2 mb-8">
+                    <Text className="text-[22px] font-black text-gray-900">
+                        {editingId ? "Update Standard" : "New Standard"}
+                    </Text>
+                    <TouchableOpacity onPress={() => refRBSheet.current?.close()}>
+                        <Ionicons name="close-circle" size={28} color="#D1D5DB" />
+                    </TouchableOpacity>
+                </View>
 
-                <View className="mb-8">
-                    <Text className="text-[15px] font-semibold text-gray-700 mb-2">Standard Name</Text>
+                <View className="mb-10">
+                    <Text className="text-[14px] font-bold text-gray-500 mb-3 ml-1 uppercase tracking-widest">Name</Text>
                     <TextInput
                         value={name}
                         onChangeText={setName}
                         placeholder="e.g. 1st Standard, LKG"
-                        placeholderTextColor="#9CA3AF"
-                        className="border border-gray-200 rounded-2xl p-4 text-[16px] bg-gray-50 text-gray-900 font-medium"
+                        placeholderTextColor="#A0AEC0"
+                        className="border-2 border-gray-50 rounded-2xl px-5 py-4 text-[17px] bg-gray-50 text-gray-900 font-semibold"
                     />
                 </View>
 
                 <View className="flex-row gap-4">
                     <TouchableOpacity
-                        className="flex-1 py-4 bg-gray-100 rounded-2xl items-center"
+                        className="flex-1 py-4.5 bg-gray-100 rounded-2xl items-center justify-center p-4"
                         onPress={() => refRBSheet.current?.close()}
                     >
-                        <Text className="text-gray-600 font-bold text-[16px]">Cancel</Text>
+                        <Text className="text-gray-500 font-extrabold text-[16px]">Cancel</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         disabled={loading}
                         onPress={handleSave}
-                        className={`flex-1 py-4 rounded-2xl items-center ${loading ? "bg-gray-300" : "bg-blue-600 shadow-lg shadow-blue-200"}`}
+                        className={`flex-1 py-4.5 rounded-2xl items-center justify-center p-4 shadow-xl ${loading ? "bg-orange-400" : "bg-orange-600 shadow-orange-200"}`}
                     >
-                        <Text className="text-white font-bold text-[16px]">
-                            {loading ? "Saving..." : editingId ? "Update" : "Save"}
+                        <Text className="text-white font-extrabold text-[16px]">
+                            {loading ? "Processing..." : editingId ? "Update" : "Create"}
                         </Text>
                     </TouchableOpacity>
                 </View>

@@ -6,10 +6,9 @@ import { Student } from "../type/type";
 
 interface StudentsCardProps {
     student: Student;
-    onDelete?: () => void;
 }
 
-const StudentsCard = ({ student, onDelete }: StudentsCardProps) => {
+const StudentsCard = ({ student }: StudentsCardProps) => {
     const navigation = useNavigation<any>();
     const { id, name, gender, phone, activeStatus, standardName, imageUrl } = student;
 
@@ -52,9 +51,6 @@ const StudentsCard = ({ student, onDelete }: StudentsCardProps) => {
                         <View className="items-end justify-between">
                             {/* Icons */}
                             <View className="flex-row gap-3 mb-3">
-                                <TouchableOpacity onPress={onDelete}>
-                                    <AntDesign name="delete" color="#EF4444" size={22} />
-                                </TouchableOpacity>
                                 <TouchableOpacity onPress={() => navigation.navigate("CreateStudent", {
                                     student,
                                     headerTitle: "Edit Student"

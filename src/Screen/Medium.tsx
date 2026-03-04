@@ -198,44 +198,37 @@ const Medium = () => {
                         mediums.map((item) => (
                             <View
                                 key={item.id}
-                                className="mb-4 p-5 rounded-3xl bg-white border border-gray-100 shadow-sm"
+                                className="mb-4 flex-row items-center p-4 bg-white rounded-2xl border border-gray-100"
                             >
-                                <View className="flex-row justify-between items-start">
-                                    <View className="flex-row items-center flex-1 pr-4">
-                                        <View className="w-2.5 h-2.5 rounded-full bg-blue-500 mr-3" />
-                                        <Text className="text-[18px] font-bold text-gray-900 leading-6">
-                                            {item.name}
-                                        </Text>
-                                    </View>
-
-                                    <View className="flex-row gap-3">
-                                        <TouchableOpacity
-                                            onPress={() => handleOpenSheet(item)}
-                                            className="w-10 h-10 bg-blue-50 rounded-full items-center justify-center"
-                                        >
-                                            <Feather name="edit-2" color="#3B82F6" size={17} />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() => handleDelete(item.id)}
-                                            className="w-10 h-10 bg-red-50 rounded-full items-center justify-center"
-                                        >
-                                            <AntDesign name="delete" color="#EF4444" size={17} />
-                                        </TouchableOpacity>
-                                    </View>
+                                {/* Left Icon */}
+                                <View className="w-12 h-12 rounded-xl bg-blue-50 items-center justify-center">
+                                    <Ionicons name="globe-outline" size={24} color="#3B82F6" />
                                 </View>
 
-                                <View className="mt-4 flex-row justify-between items-center pt-3 border-t border-gray-50">
-                                    <Text className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
-                                        ID: #{item.id}
+                                {/* Center Content */}
+                                <View className="flex-1 ml-4">
+                                    <Text className="text-[17px] font-bold text-gray-900">
+                                        {item.name}
                                     </Text>
-                                    {item.createdDate && (
-                                        <View className="flex-row items-center">
-                                            <Feather name="calendar" size={12} color="#9CA3AF" />
-                                            <Text className="text-[12px] text-gray-500 ml-1.5">
-                                                {formatDate(item.createdDate)}
-                                            </Text>
-                                        </View>
-                                    )}
+                                    <Text className="text-[11px] font-medium text-gray-400 uppercase tracking-widest mt-0.5">
+                                        Language Medium
+                                    </Text>
+                                </View>
+
+                                {/* Right Actions */}
+                                <View className="flex-row gap-2">
+                                    <TouchableOpacity
+                                        onPress={() => handleOpenSheet(item)}
+                                        className="w-10 h-10 items-center justify-center rounded-full"
+                                    >
+                                        <Feather name="edit" color="#3B82F6" size={22} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={() => handleDelete(item.id)}
+                                        className="w-10 h-10 items-center justify-center rounded-full"
+                                    >
+                                        <AntDesign name="delete" color="#EF4444" size={22} />
+                                    </TouchableOpacity>
                                 </View>
                             </View>
                         ))

@@ -5,6 +5,8 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import apiClient from '../api/apiBaseUrl';
 
+import AppHeader from '../utils/AppBar';
+
 const BirthdayTemplateSettings = () => {
     const navigation = useNavigation();
     const [template, setTemplate] = useState("Happy Birthday {name}! Have a great year ahead! - Riya Tuition Center");
@@ -59,13 +61,12 @@ const BirthdayTemplateSettings = () => {
     }
 
     return (
-        <View className="flex-1 bg-white">
-            <View className="flex-row items-center p-4 border-b border-[#E0E5E9]">
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <AntDesign name="arrowleft" size={24} color="#1E293B" />
-                </TouchableOpacity>
-                <Text className="ml-4 text-xl font-bold text-[#1E293B]">Birthday Template</Text>
-            </View>
+        <View className="flex-1 bg-[#F9FAFB]">
+            <AppHeader
+                title="Birthday Template"
+                showBack={true}
+                onLeftPress={() => navigation.goBack()}
+            />
 
             <View className="p-6">
                 <Text className="text-[#64748B] mb-4">

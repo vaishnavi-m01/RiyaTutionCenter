@@ -21,6 +21,7 @@ type data = {
 const FeesCard = ({
     id,
     name,
+    image,
     standard,
     status,
     date,
@@ -67,7 +68,7 @@ const FeesCard = ({
             <View className="flex-row items-center justify-between mb-3">
                 <View className="flex-row items-center flex-1">
                     <Image
-                        source={require("../assets/image/Person.png")}
+                        source={image ? { uri: image } : require("../assets/image/Person.png")}
                         style={{ width: 50, height: 50 }}
                         className="rounded-full"
                     />

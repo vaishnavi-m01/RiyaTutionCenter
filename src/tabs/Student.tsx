@@ -88,31 +88,6 @@ const StudentTab = () => {
         ];
     }, [students]);
 
-    const handleDelete = async (id: number) => {
-        Alert.alert(
-            "Delete Student",
-            "Are you sure you want to delete this student?",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            const response = await apiClient.delete(`/students/delete/${id}`);
-                            if (response.status === 200) {
-                                ToastAndroid.show("Student deleted successfully", ToastAndroid.SHORT);
-                                fetchStudents(); // Refresh list
-                            }
-                        } catch (error) {
-                            console.error("Failed to delete student:", error);
-                            Alert.alert("Error", "Failed to delete student. Please try again.");
-                        }
-                    }
-                }
-            ]
-        );
-    };
 
     const themeColor = "#007BFF";
 
@@ -194,7 +169,6 @@ const StudentTab = () => {
                             <StudentsCard
                                 key={item.id}
                                 student={item}
-                                onDelete={() => handleDelete(item.id)}
                             />
                         ))
                     ) : (

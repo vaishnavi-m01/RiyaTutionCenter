@@ -4,12 +4,13 @@ import { Image, Text, TouchableOpacity, View } from "react-native"
 
 type AttendanceCardProps = {
   name: string;
+  imageUrl?: string;
   status: "Present" | "Absent" | null;
   onStatusChange: (status: "Present" | "Absent") => void;
   onPress?: () => void;
 }
 
-const AttendanceCard = ({ name, status, onStatusChange, onPress }: AttendanceCardProps) => {
+const AttendanceCard = ({ name, imageUrl, status, onStatusChange, onPress }: AttendanceCardProps) => {
   const navigation = useNavigation<any>()
 
   return (
@@ -20,12 +21,12 @@ const AttendanceCard = ({ name, status, onStatusChange, onPress }: AttendanceCar
 
       <View className="flex-row items-center flex-1">
         <Image
-          source={require("../assets/image/Person.png")}
+          source={imageUrl ? { uri: imageUrl } : require("../assets/image/Person.png")}
           style={{ width: 68, height: 68 }}
           className="rounded-full"
         />
 
-        <Text className="font-Jost font-semibold text-[16px] text-[#111827] ">
+        <Text className="font-Jost font-semibold text-[16px] text-[#111827] ml-3">
           {name}
         </Text>
       </View>
